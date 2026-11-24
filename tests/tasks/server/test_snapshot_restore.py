@@ -229,3 +229,17 @@ async def test_restore_skipped_for_non_fastmcp_task_keys():
     await restore_task_snapshot(key="not-a-fastmcp-key")
     await restore_task_snapshot(key="weird:client-a:task-1:tool:my_tool")
     await restore_task_snapshot(key="")
+
+
+def test_task_context_snapshot_repr_hides_credentials():
+    """repr(TaskContextSnapshot) must not expose bearer tokens or HTTP headers."""
+    snapshot = TaskContextSnapshot(
+        access_token_json='{"access_token":"eyJhbGciOiJSUzI1NiJ9.SECRET-JWT-SIGNATURE"}',
+        http_headers={"authorization": "Bearer sk-live-SECRET-TOKEN"},
+        session_id="sess-1",
+    )
+    rendered = repr(snapshot)
+    assert "SECRET-JWT-SIGNATURE" not in rendered
+    assert "sk-live-SECRET-TOKEN" not in rendered
+    assert "Bearer" not in rendered
+    assert "sess-1" in rendered
