@@ -452,6 +452,24 @@ class TestResolveServerSpec:
         assert result.command == "myserver"
         assert result.args == []
 
+    def test_command_preserves_windows_backslashes(self):
+        with patch("fastmcp.cli.client.sys.platform", "win32"):
+            result = resolve_server_spec(
+                None,
+                command=r"C:\path\to\.venv\Scripts\python.exe C:\path\to\server.py",
+            )
+            assert isinstance(result, StdioTransport)
+            assert result.command == r"C:\path\to\.venv\Scripts\python.exe"
+            assert result.args == [r"C:\path\to\server.py"]
+
+            quoted = resolve_server_spec(
+                None,
+                command=r'"C:\my path\python.exe" "C:\my path\server.py"',
+            )
+            assert isinstance(quoted, StdioTransport)
+            assert quoted.command == r"C:\my path\python.exe"
+            assert quoted.args == [r"C:\my path\server.py"]
+
     def test_server_spec_and_command_exits(self):
         with pytest.raises(SystemExit):
             resolve_server_spec("http://localhost:8000", command="npx server")

@@ -144,11 +144,20 @@ def resolve_server_spec(
 
 def _build_stdio_from_command(command_str: str) -> StdioTransport:
     """Shell-split a command string into a ``StdioTransport``."""
+    is_windows = sys.platform == "win32"
     try:
-        parts = shlex.split(command_str)
+        parts = shlex.split(command_str, posix=not is_windows)
     except ValueError as exc:
         console.print(f"[bold red]Error:[/bold red] Invalid command: {exc}")
         sys.exit(1)
+
+    if is_windows:
+        parts = [
+            part[1:-1]
+            if len(part) >= 2 and part[0] == part[-1] and part[0] in ('"', "'")
+            else part
+            for part in parts
+        ]
 
     if not parts:
         console.print("[bold red]Error:[/bold red] Empty --command")
